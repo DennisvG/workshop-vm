@@ -1,0 +1,11 @@
+---
+# tasks file for installing and updating software
+- name: yum update all
+  yum:
+    name: "*"
+    state: latest
+
+- name: install required packages
+  yum:
+    name: "{{ required_packages }}"
+    state: latest

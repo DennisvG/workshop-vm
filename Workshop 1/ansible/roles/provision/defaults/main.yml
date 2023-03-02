@@ -1,0 +1,10 @@
+---
+# defaults file for provision
+localzone: /usr/share/zoneinfo/Europe/Amsterdam
+
+required_packages:
+  - curl
+  - nc
+  - unzip
+  - vim
+  - "@Development Tools"

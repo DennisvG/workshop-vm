@@ -1,0 +1,7 @@
+---
+# tasks file for provision
+- name: install and update required software
+  import_tasks: software.yml
+
+- name: configure system
+  import_tasks: configure.yml

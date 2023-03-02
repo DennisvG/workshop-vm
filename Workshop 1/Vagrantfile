@@ -1,0 +1,48 @@
+Vagrant.configure("2") do |config|
+  config.vm.box = "almalinux/8"
+  config.ssh.insert_key = false
+  # required: vagrant plugin install vagrant-hostmanager
+  config.hostmanager.enabled = true
+  config.hostmanager.manage_host = true
+  config.hostmanager.ignore_private_ip = false
+  config.hostmanager.include_offline = false
+  config.vm.provider :virtualbox do |v|
+    v.memory = 2048
+    v.cpus = 1
+    v.linked_clone = true
+  end
+
+  # master node
+  config.vm.define "webserver" do |web|
+    web.vm.hostname = "webserver.example.com"
+    web.vm.network :private_network, ip: "192.168.60.2"
+    web.hostmanager.aliases = %w(webserver sales.example.com account.example.com)
+  end
+
+  # worker appserver1
+  config.vm.define "appserver1" do |app|
+    app.vm.hostname = "appserver1.example.com"
+    app.vm.network :private_network, ip: "192.168.60.3"
+    app.hostmanager.aliases = %w(appserver1)
+  end
+
+  # If possible with cpu and memory
+  # worker appserver2
+  #config.vm.define "appserver2" do |app|
+  #  app.vm.hostname = "appserver2.example.com"
+  #  app.vm.network :private_network, ip: "192.168.60.4"
+  #  app.hostmanager.aliases = %w(appserver2)
+  #end
+
+  #config.vm.provision :hostmanager
+  config.vm.provision "ansible" do |ansible|
+    ansible.playbook = "./ansible/playbook.yml"
+  end
+
+  # vbguest additions
+  # required: vagrant plugin install vagrant-vbguest
+  # Set to false for first time use
+  config.vbguest.auto_update = false
+  # do NOT download the iso file from a webserver
+  config.vbguest.no_remote = true
+end

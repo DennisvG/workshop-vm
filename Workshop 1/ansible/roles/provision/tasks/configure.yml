@@ -1,0 +1,25 @@
+---
+# tasks file for configuring system
+- name: set timezone to localzone
+  file:
+    src: "{{ localzone }}"
+    dest: /etc/localtime
+    state: link
+    force: yes
+
+- name: set SElinux in enforcing mode (change in permissive mode for less security)
+  selinux:
+    policy: targeted
+    state: enforcing
+
+- name: Change firewalld.conf for warning on AllowZoneDrifting
+  replace:
+    path: /etc/firewalld/firewalld.conf
+    regexp: '^AllowZoneDrifting=yes'
+    replace: 'AllowZoneDrifting=no'
+
+- name: Enable and start firewalld
+  service:
+    name: firewalld
+    enabled: true
+    state: started
