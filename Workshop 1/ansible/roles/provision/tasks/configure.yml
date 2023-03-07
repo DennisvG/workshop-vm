@@ -7,10 +7,10 @@
     state: link
     force: yes
 
-- name: set SElinux in enforcing mode (change in permissive mode for less security)
+- name: set SElinux mode
   selinux:
     policy: targeted
-    state: enforcing
+    state: "{{ selinux_mode }}"
 
 - name: Change firewalld.conf for warning on AllowZoneDrifting
   replace:

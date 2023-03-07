@@ -2,6 +2,8 @@
 # defaults file for provision
 localzone: /usr/share/zoneinfo/Europe/Amsterdam
 
+selinux_mode: permissive
+
 required_packages:
   - curl
   - nc
