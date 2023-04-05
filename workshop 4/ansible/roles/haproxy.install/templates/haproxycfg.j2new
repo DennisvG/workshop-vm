@@ -1,0 +1,73 @@
+#---------------------------------------------------------------------
+# Global settings
+#---------------------------------------------------------------------
+global
+    log         127.0.0.1:514 local0 info     #Log configuration
+
+    chroot      /var/lib/haproxy
+    pidfile     /var/run/haproxy.pid
+    maxconn     4000
+    user        haproxy             #Haproxy running under user and group "haproxy"
+    group       haproxy
+    daemon
+
+    # turn on stats unix socket
+    stats socket /var/lib/haproxy/stats mode 660 level admin
+    stats timeout 30s
+ 
+#---------------------------------------------------------------------
+# common defaults that all the 'listen' and 'backend' sections will
+# use if not designated in their block
+#---------------------------------------------------------------------
+defaults
+    mode                    http
+    log                     global
+    option                  httplog
+    option                  dontlognull
+    option http-server-close
+    #option forwardfor       except 127.0.0.0/8
+    option                  redispatch
+    retries                 3
+    timeout http-request    10s
+    timeout queue           1m
+    timeout connect         5s
+    timeout client          50s
+    timeout server          50s
+    timeout http-keep-alive 10s
+    timeout check           10s
+    maxconn                 3000
+ 
+#---------------------------------------------------------------------
+#HAProxy Monitoring Config
+#---------------------------------------------------------------------
+listen haproxy3-monitoring *:{{ hap_stats_port }}                #Haproxy Monitoring run on port {{ hap_stats_port }}
+    mode http
+    option forwardfor
+    option httpclose
+    stats enable
+    stats show-legends
+    stats refresh 5s
+    stats uri /stats                             #URL for HAProxy monitoring
+    stats realm Haproxy\ Statistics
+    stats auth admin:admin            #User and Password for login to the monitoring dashboard
+    stats admin if TRUE
+    default_backend {{ hap_backend }}                    #This is optionally for monitoring backend
+ 
+#---------------------------------------------------------------------
+# FrontEnd Configuration
+#---------------------------------------------------------------------
+frontend main
+    bind {{ hap_front.bind }}:{{ hap_front.port }}
+    option http-server-close
+    option forwardfor
+    default_backend {{ hap_backend }}
+ 
+#---------------------------------------------------------------------
+# BackEnd roundrobin as balance algorithm
+#---------------------------------------------------------------------
+backend {{ hap_backend }}
+    balance roundrobin                                     #Balance algorithm
+    option httpchk HEAD / HTTP/1.1\r\nHost:\ localhost    #Check the server application is up and healty - 200 status code
+    {% for host in groups['appservers'] %}
+    server {{ hostvars[host] ['ansible_facts']['ansible_hostname'] }} :{{ hostvars[host] ['ansible_facts']['ansible_enp0s8']['ipv4']['address'] }}:{{ app.port }} check
+    {% endfor %}

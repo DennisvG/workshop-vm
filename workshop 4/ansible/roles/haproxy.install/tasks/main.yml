@@ -1,0 +1,7 @@
+---
+# tasks file for haproxy.install
+- name: install reuired packages
+  include_tasks: install.yml
+
+- name: configure haproxy
+  include_tasks: configure.yml
