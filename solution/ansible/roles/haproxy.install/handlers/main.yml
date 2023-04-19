@@ -1,0 +1,16 @@
+---
+# handlers file for haproxy.install
+- name: restart rsyslog
+  service:
+    name: rsyslog
+    state: restarted
+
+- name: restart haproxy
+  service:
+    name: haproxy
+    state: restarted
+
+- name: restart httpd
+  service:
+    name: httpd
+    state: restarted

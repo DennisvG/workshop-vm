@@ -1,0 +1,9 @@
+---
+- name: Aanmaken nieuwe gebruiker
+  hosts: appservers
+
+  tasks:
+    - name: newbie gebruiker aanmaken met uid 4000
+      user:
+        name: newbie
+        state: present

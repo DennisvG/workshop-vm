@@ -1,0 +1,4 @@
+---
+# tasks file for jboss.deploy
+- name: Deploy application
+  import_tasks: deploy_app.yml

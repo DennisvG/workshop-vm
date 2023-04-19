@@ -1,0 +1,17 @@
+<VirtualHost *:443>
+	DocumentRoot "/var/www/html/{{ item }}"
+	ServerName {{ item }}.{{ domain_name }}
+
+	SSLEngine on
+	SSLCertificateFile /etc/pki/tls/certs/{{ item }}.{{ domain_name }}.crt
+	SSLCertificateKeyFile /etc/pki/tls/private/{{ item }}.{{ domain_name }}.key
+
+	<Directory "/var/www/html/{{ item }}">
+		AllowOverride None
+		#Allow open access:
+		Require all granted
+	</Directory>
+
+	ErrorLog "logs/{{ item }}.{{ domain_name }}-error.log"
+	CustomLog "logs/{{ item }}.{{ domain_name }}-acces.log" combined
+</VirtualHost>

@@ -1,0 +1,9 @@
+---
+- name: test playbook for check version community collection
+  become: false
+  hosts: localhost
+
+  tasks:
+  - name: Check version of community.general
+    ansible.builtin.debug:
+      msg: "community.general version {{ lookup('community.general.collection_version', 'community.general') }}"

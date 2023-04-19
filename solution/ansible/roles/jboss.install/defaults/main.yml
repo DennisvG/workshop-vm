@@ -1,0 +1,21 @@
+---
+# defaults file for jboss.install
+clean_install: false
+
+java_version: java-17-openjdk
+
+required_packages:
+  - firewalld
+  - "{{ java_version }}"
+
+required_services:
+  - firewalld
+
+required_ports:
+  - 8080
+  - 9990
+
+jboss_settings:
+  version: jboss-eap-7.4.0
+  memory: '-Xms512m -Xmx1024m'
+  binding: '0.0.0.0'

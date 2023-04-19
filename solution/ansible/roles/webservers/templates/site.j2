@@ -1,0 +1,7 @@
+<VirtualHost *:80>
+	ServerName {{ item }}.{{ domain_name }}
+	RewriteEngine on
+	RewriteCond %{HTTPS} off
+	RewriteRule ^(/.*)$ https://%{SERVER_NAME}$1 [L,R=301]
+
+</VirtualHost>

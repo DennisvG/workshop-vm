@@ -1,0 +1,22 @@
+---
+- name: check if file exists playbook
+  hosts: all
+
+  tasks:
+    - name: check and register if file exists
+      stat:
+        path: /home/vagrant/testfile.txt
+      register: file_result
+
+    - name: Debug message if file exists
+      debug:
+        msg: "File /home/vagrant/testfile.txt already exists"
+      when: file_result.stat.exists == True
+
+    - name: copy file if file not exists
+      copy:
+        src: ./files/testfile.txt
+        dest: /home/vagrant/testfile.txt
+        owner: vagrant
+        group: vagrant
+      when: file_result.stat.exists == False

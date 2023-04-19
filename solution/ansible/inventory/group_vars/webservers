@@ -1,0 +1,7 @@
+httpd_services:
+  - http
+  - https
+
+required_services:
+  - httpd
+  - firewalld

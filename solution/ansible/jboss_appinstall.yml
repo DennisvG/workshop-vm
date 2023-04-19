@@ -1,0 +1,6 @@
+---
+- name: playbook for deployment of application in JBOSS
+  hosts: appservers
+
+  roles:
+    - jboss.appinstall

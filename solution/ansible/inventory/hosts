@@ -1,0 +1,10 @@
+[webservers]
+webserver
+
+[appservers]
+appserver1
+appserver2
+
+[linux:children]
+webservers
+appservers

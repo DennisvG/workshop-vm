@@ -1,0 +1,39 @@
+---
+# file for configure haproxy
+- name: create log directory for haproxy
+  file:
+    path: /var/log/haproxy
+    state: directory
+
+- name: copy haproxylog.conf to rsyslog.d
+  copy:
+    src: haproxylog.conf
+    dest: /etc/rsyslog.d/
+  notify: restart rsyslog
+
+# get facts needed because appservers not in playbook
+- name: get facts of group appservers
+  setup:
+  delegate_to: "{{ item }}"
+  delegate_facts: true
+  loop: "{{ groups['appservers'] }}"
+
+- name: template haproxy cfg
+  template:
+    src: haproxycfg.j2
+    dest: /etc/haproxy/haproxy.cfg
+    backup: yes
+  notify: restart haproxy
+
+- name: enable and start haproxy.service
+  service:
+    name: haproxy
+    state: started
+    enabled: yes
+
+- name: Configure firewalld
+  firewalld:
+    port: "{{ hap_stats_port }}/tcp"
+    permanent: yes
+    state: enabled
+    immediate: yes

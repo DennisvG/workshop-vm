@@ -1,0 +1,97 @@
+---
+- name: Create temp directory
+  tempfile:
+    state: directory
+    suffix: temp
+  register: tempdir
+
+- name: Copy zip file to temp directory
+  copy:
+    src: "{{ jboss_settings.version }}.zip"
+    dest: "{{ tempdir.path }}/{{ jboss_settings.version }}.zip"
+
+- name: unarchive zip file
+  unarchive:
+    src: "{{ tempdir.path }}/{{ jboss_settings.version }}.zip"
+    dest: "/opt/"
+    remote_src: yes
+    owner: "{{ jboss.user }}"
+    group: "{{ jboss.group }}"
+    mode: '02750'
+    list_files: true
+  register: archive_dir
+
+- name: Debug archive_dir
+  debug:
+    var: archive_dir.files[0]
+
+- name: link jboss.home to jboss installation
+  file:
+    src: "/opt/{{ archive_dir.files[0] }}"
+    dest: "{{ jboss.home }}"
+    state: link
+    owner: "{{ jboss.user }}"
+    group: "{{ jboss.group }}"
+
+- name: Template for standalone.conf
+  template:
+    src: standalone.j2
+    dest: "{{ jboss.home }}/bin/standalone.conf"
+    owner: "{{ jboss.user }}"
+    group: "{{ jboss.group }}"
+
+- name: set correct file rights
+  shell: find /opt/{{ archive_dir.files[0] }} -type f -exec chmod -c 0640 {} \;
+  register: chmod_result
+  changed_when: "chmod_result.stdout != \"\""
+
+- name: make .sh files executable
+  shell: find /opt/{{ archive_dir.files[0] }} -name *.sh -exec chmod -c 0750 {} \;
+  register: chmod_result
+  changed_when: "chmod_result.stdout != \"\""
+
+- name: correct rights on log and tmp directory and if not exists create
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ jboss.user }}"
+    group: "{{ jboss.group }}"
+    mode: 02770
+  with_items:
+    - "{{ jboss.home }}/standalone/log"
+    - "{{ jboss.home }}/standalone/tmp"
+
+- name: template jboss.service
+  template:
+    src: jboss_service.j2
+    dest: /etc/systemd/system/jboss.service
+    mode: 0640
+
+- name: just force systemd to reread configs
+  systemd:
+    daemon_reload: yes
+
+- name: enable and start service
+  service:
+    name: jboss
+    state: started
+    enabled: true
+
+- name: wait for jboss started
+  wait_for:
+    port: 8080
+    delay: 10
+    timeout: 60
+  register: waitfor
+
+- name: debug message wait for
+  debug:
+    msg: "Result: {{ waitfor }}"
+
+- name: create management user
+  command: "/opt/jboss/bin/add-user.sh {{ jbmanager.name }} {{ jbmanager.password }}"
+
+- name: Cleanup tempdir
+  file:
+    path: "{{ tempdir.path }}"
+    state: absent

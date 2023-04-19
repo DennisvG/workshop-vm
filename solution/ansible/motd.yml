@@ -1,0 +1,10 @@
+---
+- name: MOTD aanpassen
+  hosts: all
+
+  tasks:
+    - name: Voeg een regel toe aan MOTD file
+      lineinfile:
+        path: /etc/motd
+        insertbefore: '^Managed'
+        line: "{{ message }}"

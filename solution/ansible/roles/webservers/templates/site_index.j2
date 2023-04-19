@@ -1,0 +1,10 @@
+<html>
+<head>
+  <title>{{ item }}.{{ domain_name }}</title>
+</head>
+<body>
+  <h1>Welcome on {{ item }}.{{ domain_name }} </h1>
+  <h2>You're on {{ ansible_fqdn }}</h2>
+  <h2>Running on address: {{ ansible_enp0s1.ipv4.address }}</h2>
+</body>
+</html>

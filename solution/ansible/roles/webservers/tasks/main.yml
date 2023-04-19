@@ -1,0 +1,13 @@
+---
+# tasks file for webservers
+
+- name: Installation of required software
+  include_tasks: install.yml
+
+- name: Configure default requirements
+  include_tasks: configure_default.yml
+
+- name: Configure and install sites
+  include_tasks: configure_sites.yml
+  tags:
+    - sites

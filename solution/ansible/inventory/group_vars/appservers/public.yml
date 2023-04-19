@@ -1,0 +1,11 @@
+jboss:
+  user: jboss
+  group: jboss
+  id: 850
+  home: /opt/jboss
+  deploymentdir: /opt/jboss/standalone/deployments/
+
+application:
+  name: SampleWebApp
+  version: 1.3.0
+  extension: war

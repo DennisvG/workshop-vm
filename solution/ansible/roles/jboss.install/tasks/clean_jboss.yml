@@ -1,0 +1,48 @@
+---
+- name: Check if a jboss.service file exists
+  stat:
+    path: /etc/systemd/system/jboss.service
+  register: jbservice
+
+- name: Stop jboss.service if exists
+  service:
+    name: jboss
+    state: stopped
+  when: jbservice.stat.exists == True
+
+- name: Check if symlink jboss.home already exists
+  stat:
+    path: "{{ jboss.home }}"
+  register: jbhome
+
+- name: Remove jboss.home link if already exists
+  file:
+    path: "{{ jboss.home }}"
+    state: absent
+  when: jbhome.stat.islnk is defined and jbhome.stat.islnk
+
+- name: search for old jboss installation directory
+  find:
+    paths: /opt
+    file_type: directory
+    use_regex: yes
+    patterns: jboss*
+  register: oldjboss
+
+- name: debug find path
+  debug:
+    msg: "Gevonden {{ oldjboss.files }}"
+
+- name: create backup of oldjboss
+  archive:
+    path: "{{ item.path }}"
+    dest: /tmp/backupjboss.{{ ansible_date_time.iso8601 }}.zip
+  with_items: "{{ oldjboss.files }}"
+  when: oldjboss.files
+
+- name: remove oldjboss
+  file:
+    path: "{{ item.path }}"
+    state: absent
+  with_items: "{{ oldjboss.files }}"
+  when: oldjboss.files

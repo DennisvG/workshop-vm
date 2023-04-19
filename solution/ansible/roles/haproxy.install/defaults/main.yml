@@ -1,0 +1,16 @@
+---
+# defaults file for haproxy.install
+required_packages:
+  - haproxy
+
+hap_front:
+  bind: 127.0.0.1
+  port: 8080
+
+hap_backend: "app-main"
+
+hap_stats_port: 85
+
+app_port: "8080"
+
+web_conf_stats: 000_default.conf

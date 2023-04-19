@@ -1,0 +1,59 @@
+---
+- name: Configure root directory of site
+  file:
+    path: /var/www/html/{{ item }}
+    state: directory
+    mode: 0755
+  with_items: "{{ site_names }}"
+  tags:
+    - sites
+
+- name: template site_index
+  template:
+    src: site_index.j2
+    dest: /var/www/html/{{ item }}/index.html
+    mode: 0644
+  with_items: "{{ site_names }}"
+  tags:
+    - sites
+
+- name: template site config
+  template:
+    src: site.j2
+    dest: /etc/httpd/conf.d/{{ item }}.conf
+    mode: 0644
+  with_items: "{{ site_names }}"
+  notify: restart httpd
+  tags:
+    - sites
+
+- name: Copy private key
+  copy:
+    src: "{{ item }}.{{ domain_name }}.key"
+    dest: /etc/pki/tls/private/
+    mode: 0644
+  with_items: "{{ site_names }}"
+  notify: restart httpd
+  tags:
+    - sites
+
+- name: Copy public crt
+  copy:
+    src: "{{ item }}.{{ domain_name }}.crt"
+    dest: /etc/pki/tls/certs/
+    mode: 0644
+  with_items: "{{ site_names }}"
+  notify: restart httpd
+  tags:
+    - sites
+
+- name: Template ssl site config
+  template:
+    src: ssl_site.j2
+    dest: /etc/httpd/conf.d/ssl_{{ item }}.conf
+    mode: 0644
+  with_items: "{{ site_names }}"
+  notify: restart httpd
+  tags:
+    - sites
+

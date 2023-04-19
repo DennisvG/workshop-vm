@@ -1,0 +1,6 @@
+---
+- name: playbook for installation of JBOSS
+  hosts: appservers
+
+  roles:
+    - jboss.install

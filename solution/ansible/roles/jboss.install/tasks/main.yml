@@ -1,0 +1,14 @@
+---
+# tasks file for jboss.install
+- name: Install and configure required software
+  import_tasks: requirements.yml
+
+- name: Create jboss user
+  import_tasks: create_jboss_user.yml
+
+- name: Backup and remove old jboss when clean_install = true
+  import_tasks: clean_jboss.yml
+  when: clean_install == "true"
+
+- name: Install jboss software
+  import_tasks: install_jboss.yml

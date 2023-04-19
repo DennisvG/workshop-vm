@@ -1,0 +1,21 @@
+---
+- name: Create Jboss group with correct id
+  group:
+    name: "{{ jboss.group }}"
+    gid: "{{ jboss.id }}"
+    state: present
+
+- name: Creating Jboss user
+  user:
+    name: "{{ jboss.user }}"
+    group: "{{ jboss.group }}"
+    uid: "{{ jboss.id }}"
+    home: "{{ jboss.home }}"
+    create_home: false
+    shell: /sbin/nologin
+    state: present
+
+- name: Edit /etc/profile for jboss_home
+  lineinfile:
+    path: /etc/profile
+    line: "export JBOSS_HOME={{ jboss.home }}"

@@ -1,0 +1,13 @@
+[Unit]
+Description=JBoss Application Server
+After=syslog.target network.target
+Before=httpd.service
+
+[Service]
+Type=idle
+User={{ jboss.user }}
+Group={{ jboss.user }}
+ExecStart={{ jboss.home }}/bin/standalone.sh -c standalone.xml
+
+[Install]
+WantedBy=multi-user.target

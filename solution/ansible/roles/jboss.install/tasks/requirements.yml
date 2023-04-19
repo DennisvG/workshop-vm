@@ -1,0 +1,56 @@
+---
+# requirements.yml install and configure requirements for jboss
+- name: Install required software
+  package:
+    name: "{{ required_packages }}"
+    state: latest
+
+- name: Configure required_services
+  service:
+    name: "{{ item }}"
+    enabled: yes
+    state: started
+  with_items: "{{ required_services }}"
+
+- name: configure firewalld
+  firewalld:
+    port: "{{ item }}/tcp"
+    permanent: yes
+    state: enabled
+    immediate: yes
+  with_items: "{{ required_ports }}"
+
+- name: Check alternatives java version
+  shell: alternatives --list | grep ^java
+  register: java_version_found
+
+- name: Debug java_version_found
+  debug:
+    msg: "Java found {{ java_version_found.stdout}}"
+  when: java_version_found is search( java_version )
+
+- name: Debug java_version_found not found
+  debug:
+    msg: "Java version {{ java_version }} not found"
+  when: not java_version_found is search( java_version )
+
+- name: Get path for {{ java_version }}
+  shell: alternatives --list | grep {{ java_version }} | awk '{ print $NF }'
+  when: not java_version_found is search( java_version )
+  register: java_version_path
+
+- name: Debug java_version_path
+  debug:
+    msg: Found {{ java_version_path.stdout }}
+  when: not java_version_found is search( java_version )
+
+- name: Set correct version of java
+  community.general.alternatives:
+    name: java
+    link: /usr/bin/java
+    path: "{{ java_version_path.stdout }}/bin/java"
+    state: selected
+  when:
+    - not java_version_found is search( java_version )
+    - java_version_path is defined
+

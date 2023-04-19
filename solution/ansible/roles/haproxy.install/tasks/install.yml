@@ -1,0 +1,5 @@
+---
+- name: installation of required software
+  yum:
+    name: "{{ required_packages }}"
+    state: latest

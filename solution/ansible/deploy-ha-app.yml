@@ -1,0 +1,56 @@
+---
+- name: Deploy of rpb application
+  hosts: appservers
+  serial: 1
+
+  vars_files:
+    - ./roles/haproxy.install/defaults/main.yml
+
+  pre_tasks:
+    - name: "Disable haproxy for {{ inventory_hostname }}"
+      haproxy:
+        state: disabled
+        backend: "{{ hap_backend }}"
+        host: "{{ inventory_hostname }}"
+        socket: /var/lib/haproxy/stats
+        wait: yes
+        shutdown_sessions: yes
+        wait_interval: 5
+        wait_retries: 5
+      delegate_to: "{{ item }}"
+      with_items: "{{ groups.webservers }}"
+
+  roles:
+    #- application.deploy
+    - jboss.deploy
+
+  post_tasks:
+    - name: "Enable haproxy for {{ inventory_hostname }}"
+      haproxy:
+        state: enabled
+        backend: "{{ hap_backend }}"
+        host: "{{ inventory_hostname }}"
+        socket: /var/lib/haproxy/stats
+        wait: yes
+      delegate_to: "{{ item }}"
+      with_items: "{{ groups.webservers }}"
+
+    - name: change ssl-sales.conf 
+      blockinfile:
+        path: /etc/httpd/conf.d/ssl_sales.conf
+        insertafter: "</Directory>"
+        block: |
+          ProxyPass /{{ application.name }} http://127.0.0.1:8080/{{ application.name }}
+          ProxyPassReverse /{{ application.name }} http://127.0.0.1:8080/{{ application.name }}
+        backup: true
+      delegate_to: "{{ item }}"
+      with_items: "{{ groups.webservers }}"
+      notify: restart httpd
+
+  handlers:
+    - name: restart httpd
+      service:
+        name: httpd
+        state: restarted
+      delegate_to: "{{ item }}"
+      with_items: "{{ groups.webservers }}"

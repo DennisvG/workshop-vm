@@ -1,0 +1,6 @@
+---
+- name: main playbook for installing and configure haproxy
+  hosts: webservers
+
+  roles:
+    - haproxy.install

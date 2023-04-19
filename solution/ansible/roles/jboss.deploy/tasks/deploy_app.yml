@@ -1,0 +1,173 @@
+---
+# tasks for deploying an application
+- name: "deploy of application {{ application.name }}-{{ application.version }}"
+  block:
+    - name: Create temp directory
+      tempfile:
+        state: directory
+        suffix: temp
+      register: tempdir
+
+    - name: "Check if already a version of {{ application.name }} is deployed"
+      find:
+        paths: "{{ jboss.deploymentdir }}"
+        use_regex: yes
+        patterns: "{{ application.name }}*"
+      register: result_olddeployment
+
+    - name: Debug result_olddeployment
+      debug:
+        msg:
+        - "{{ result_olddeployment.files }}"
+      when: result_olddeployment is defined
+
+    # Start block for undeploy old version
+    - name: Block of task for undeploy and backup old deployment
+      block:
+        - name: Create backup directory
+          file:
+            path: "{{ tempdir.path }}/deploy-backup"
+            state: directory
+
+        - name: "Create backup of old {{ application.name }}"
+          copy:
+            src: "{{ result_olddeployment.files[0].path }}"
+            dest: "{{ tempdir.path }}/deploy-backup/"
+            remote_src: true
+
+        - name: Extract name of installed application
+          set_fact:
+            app_installed: "{{ result_olddeployment.files[0].path | regex_search('[^\/]*$') }}"
+
+        - name: Debug app_installed
+          debug:
+            msg: "{{ app_installed }}"
+
+        - name: "Undeploy {{ app_installed }} from deployments"
+          jboss:
+            deploy_path: "{{ jboss.deploymentdir }}"
+            deployment: "{{ app_installed }}"
+            state: absent
+
+        - name: "Check if {{ app_installed }}.undeployed exists"
+          wait_for:
+            path: "{{ jboss.deploymentdir }}/{{ app_installed }}.undeployed"
+            delay: 10
+            timeout: 30
+          register: app_undeployed
+
+        - name: "Remove undeployed {{ app_installed }}"
+          file:
+            path: "{{ jboss.deploymentdir }}/{{ item }}"
+            state: absent
+          with_items:
+            - "{{ app_installed }}"
+            - "{{ app_installed }}.undeployed"
+
+      when: result_olddeployment is search("deployed")
+      # End block undeploy and backup
+
+    # Copy file for correct ownership settings
+    - name: "Copy {{ application.name }}-{{ application.version }}.{{ application.extension }} to {{ tempdir.path }}"
+      copy:
+        src: "{{ application.name }}-{{ application.version }}.{{ application.extension }}"
+        dest: "{{ tempdir.path }}"
+        owner: "{{ jboss.user }}"
+        group: "{{ jboss.group }}"
+
+    - name: "Deploy of {{ application.name }}-{{ application.version }}.{{ application.extension }}"
+      jboss:
+        src: "{{ tempdir.path }}/{{ application.name }}-{{ application.version }}.{{ application.extension }}"
+        deploy_path: "{{ jboss.deploymentdir }}"
+        deployment: "{{ application.name }}-{{ application.version }}.{{ application.extension }}"
+        state: present
+
+    - name: "Check if {{ application.name }}-{{ application.version }}.{{ application.extension }}.deployed"
+      wait_for:
+        path: "{{ jboss.deploymentdir }}/{{ application.name }}-{{ application.version }}.{{ application.extension }}.deployed"
+        delay: 10
+        timeout: 30
+      register: app_deployed
+
+    - name: Debug app_deployment
+      Debug:
+        msg: "Deployment: {{ app_deployed }}"
+
+    - name: Check application on http
+      uri:
+        url: "http://localhost:8080/{{ application.name }}"
+        method: get
+        status_code: 200
+
+  rescue:
+    - name: Debug rescue message
+      debug:
+        msg: "Deployment failed, trying to recover application"
+
+    - name: "Check if a backup exists"
+      find:
+        paths: "{{ tempdir.path }}/deploy-backup/"
+        use_regex: yes
+        patterns: "{{ application.name }}*"
+      register: backup_result
+
+    - name: Debug backup result
+      debug:
+        msg: "Backup found trying to recover"
+      when: backup_result.files is defined
+
+    - name: "Block for recover backup"
+      block:
+        # remark: doesn't remove application and failed file
+        - name: "Remove failed backup {{ application.name }}-{{ application.version }}.{{ application.extension }}"
+          jboss:
+            deploy_path: "{{ jboss.deploymentdir }}"
+            deployment: "{{ application.name }}-{{ application.version }}.{{ application.extension }}"
+            state: absent
+
+        - name: "Find all existing files with {{ application.name }}"
+          find:
+            paths: "{{ jboss.deploymentdir }}"
+            use_regex: yes
+            patterns: "{{ application.name }}*"
+          register: remove_files
+
+        - name: "Remove files found"
+          file:
+            path: "{{ item.path }}"
+            state: absent
+          with_items: "{{ remove_files.files }}"
+
+        - name: Extract name of backuped application
+          set_fact:
+            backup_app: "{{ backup_result.files[0].path | regex_search('[^\/]*$') }}"
+
+        - name: "Deploy early version of {{ application.name }}"
+          jboss:
+            src: "{{ backup_result.files[0].path }}"
+            deploy_path: "{{ jboss.deploymentdir }}"
+            deployment: "{{ backup_app }}"
+            state: present
+
+        - name: "Check for {{ backup_app }}.deployed"
+          wait_for:
+            path: "{{ jboss.deploymentdir }}/{{ backup_app }}.deployed"
+            delay: 10
+            timeout: 30
+          register: rescue_status
+
+        - name: Debug rescue status
+          debug:
+            msg: "Rescue {{ rescue_status }}"
+
+      when: backup_result.files is defined
+
+  always:
+  - name: Always run
+    debug:
+      msg: "Clean up temp directory"
+
+  - name: Remove tempdir
+    file:
+      path: "{{ tempdir.path }}"
+      state: absent

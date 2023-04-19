@@ -1,0 +1,21 @@
+---
+# defaults file for webservers
+
+domain_name: example.com
+
+site_names:
+  - sales
+  - account
+
+required_packages:
+  - firewalld
+  - httpd
+  - mod_ssl
+
+required_services:
+  - firewalld
+  - httpd
+
+httpd_services:
+  - http
+  - https

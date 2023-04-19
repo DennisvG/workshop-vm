@@ -1,0 +1,49 @@
+---
+- name: Enable and start required services
+  service:
+    name: "{{ item }}"
+    enabled: true
+    state: started
+  with_items: "{{ required_services }}"
+
+- name: Configure firewalld
+  firewalld:
+    service: "{{ item }}"
+    state: enabled
+    permanent: yes
+    immediate: yes
+  with_items: "{{ httpd_services }}"
+
+- name: Template index.html
+  template:
+    src: index.j2
+    dest: /var/www/html/index.html
+    mode: 0644
+
+- name: Template vhost default.conf
+  template:
+    src: vhost_default.j2
+    dest: /etc/httpd/conf.d/000_default.conf
+    mode: 0644
+  notify:
+    - reload httpd
+
+- name: Copy private key
+  copy:
+    src: "{{ ansible_fqdn }}.key"
+    dest: /etc/pki/tls/private/
+    mode: 0644
+
+- name: Copy public crt
+  copy:
+    src: "{{ ansible_fqdn }}.crt"
+    dest: /etc/pki/tls/certs/
+    mode: 0644
+
+- name: Configure default ssl.conf
+  template:
+    src: ssl.j2
+    dest: /etc/httpd/conf.d/ssl.conf
+  notify:
+    - restart httpd
+
