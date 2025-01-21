@@ -12,7 +12,7 @@ TO DO: Rewrite config for apache 2.4
 
 ## Workshop 3
 Installing and configure a jboss/wildfly application server
-You need to download jboss from [Redhat Website](https://developers.redhat.com/products/eap/download) supscription required or [Wildfly](https://www.wildfly.org) 
+You need to download jboss from [Redhat Website](https://developers.redhat.com/products/eap/download) subscription required or [Wildfly](https://www.wildfly.org) 
 Using SampleWebApp.war found on [this website](https://www.middlewareinventory.com/blog/sample-web-application-war-file-download/) with some modifications (= included in files)
 
 ## Workshop 4
